@@ -1,19 +1,15 @@
-WORKDIR /usr/src/app
+#!/bin/sh
 
-RUN chmod 777 /usr/src/app
+touch aria2.log lazyleech.log
 
-COPY requirements.txt .
+tail -f aria2.log &
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+tail -f lazyleech.log &
 
-RUN apt-get update && apt-get upgrade -y
+# https://unix.stackexchange.com/a/230676
 
-RUN apt -qq update --fix-missing && \
+export ARIA2_SECRET=$(tr -dc 'A-Za-z0-9!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~' </dev/urandom | head -c 100)
 
-    apt -qq install -y mediainfo
+aria2c --enable-rpc=true "--rpc-secret=$ARIA2_SECRET" -j5 -x5 > aria2.log 2>&1 &
 
-COPY . .
-
-CMD ["bash", "start.sh"]
-
-
+python3 -m lazyleech > lazyleech.log 2>&1
